@@ -30,9 +30,13 @@ A PowerShell script that automatically deploys a complete *arr stack (Sonarr, Ra
 
 ## Quick Start
 
-1. **Download** this repository (or clone it)
-2. **Double-click** `Setup-PrivacyBox.bat`
-3. **Follow the prompts** - the script will guide you through everything
+1. **Download** - Click the green "Code" button, then "Download ZIP"
+
+   ![How to download](images/download-instructions.png)
+
+2. **Extract** the ZIP file to your Desktop
+3. **Double-click** `Setup-PrivacyBox.bat`
+4. **Follow the prompts** - the script will guide you through everything
 
 ## What You'll Need
 
