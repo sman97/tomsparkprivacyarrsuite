@@ -26,7 +26,7 @@ A PowerShell script that automatically deploys a complete *arr stack (Sonarr, Ra
 
 - Windows 10/11
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) with WSL 2
-- NordVPN subscription
+- [NordVPN subscription](https://nordvpn.tomspark.tech/) - Fastest speeds based on [RealVPNSpeeds.com](https://realvpnspeeds.com)
 
 ## Quick Start
 
@@ -106,6 +106,14 @@ All containers share Gluetun's network = Zero IP leaks
 ## License
 
 MIT License - Use freely, modify freely, share freely.
+
+## Support This Project
+
+This project is free and open source. If you'd like to support development:
+
+[![NordVPN](https://img.shields.io/badge/Get%20NordVPN-blue?style=for-the-badge&logo=nordvpn)](https://nordvpn.tomspark.tech/)
+
+**[Get NordVPN](https://nordvpn.tomspark.tech/)** - The VPN used in this guide. Fastest speeds based on [RealVPNSpeeds.com](https://realvpnspeeds.com) testing.
 
 ## Credits
 
