@@ -126,6 +126,46 @@ docker ps
 docker compose --profile notifications up -d
 ```
 
+## Discord Notifications (Notifiarr)
+
+Want to get notified on Discord when downloads start, complete, or when new episodes are available? [Notifiarr](https://notifiarr.com) sends beautiful notifications to your Discord server.
+
+**The setup script will ask if you want this at the end.** If you skipped it or want to add it later:
+
+### Enable Notifiarr
+
+1. **Create a free account** at [notifiarr.com](https://notifiarr.com) (sign in with Discord recommended)
+
+2. **Copy your API Key** from your Notifiarr profile
+
+3. **Add the API key** to your `.env` file:
+   ```
+   NOTIFIARR_API_KEY=your-api-key-here
+   ```
+
+4. **Start Notifiarr:**
+   ```bash
+   docker compose --profile notifications up -d
+   ```
+
+5. **Open Notifiarr** at `http://localhost:5454`
+   - Username: `admin`
+   - Password: your API key
+
+### Connect Your Apps
+
+In the Notifiarr web UI (`localhost:5454`):
+1. Go to **Starr Apps**
+2. Add **Radarr**: URL `http://localhost:7878`, API key from Radarr > Settings > General
+3. Add **Sonarr**: URL `http://localhost:8989`, API key from Sonarr > Settings > General
+
+On [notifiarr.com](https://notifiarr.com):
+1. Go to **Integrations > Manage**
+2. Enable Radarr/Sonarr integrations
+3. Set up your Discord channel for notifications
+
+That's it! You'll now get Discord alerts for grabs, downloads, upgrades, and more.
+
 ## Troubleshooting
 
 ### AUTH_FAILED Error
@@ -213,6 +253,7 @@ Questions? Join the **[Tom Spark Discord](https://discord.gg/uPdRcKxEVS)** for s
 
 - [Gluetun](https://github.com/qdm12/gluetun) - VPN client
 - [LinuxServer.io](https://www.linuxserver.io/) - Docker images
+- [Notifiarr](https://notifiarr.com) - Discord notifications
 - Tom Spark - Original tutorial
 
 ---
