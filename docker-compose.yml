@@ -89,3 +89,19 @@ services:
     depends_on:
       - gluetun
     restart: always
+
+  # --- Media Server (accessible on local network) ---
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    ports:
+      - 8096:8096   # Jellyfin Web UI
+    volumes:
+      - ${ROOT_DIR}/config/jellyfin:/config
+      - ${ROOT_DIR}/media/tv:/data/tvshows
+      - ${ROOT_DIR}/media/movies:/data/movies
+    restart: always

@@ -458,42 +458,62 @@ show_setup_guide() {
 
     press_enter
 
-    # --- Media Player Setup (Optional) ---
+    # --- Jellyfin Setup ---
     write_banner
-    echo -e "  ${MAGENTA}OPTIONAL: Watch Your Media on Other Devices${NC}"
-    echo -e "  ${DARKGRAY}--------------------------------------------${NC}"
+    echo -e "  ${MAGENTA}SETUP GUIDE: Jellyfin (Media Server)${NC}"
+    echo -e "  ${DARKGRAY}------------------------------------${NC}"
     echo ""
-    echo -e "  ${WHITE}Want to watch your downloaded media on a TV, phone, or tablet?${NC}"
-    echo -e "  ${GRAY}Install Jellyfin (free) or Emby on this computer, then connect from any device!${NC}"
+    echo -e "  ${GREEN} JELLYFIN IS ALREADY INSTALLED! ${NC}"
     echo ""
-    echo -e "  ${WHITE} STEP 1: Install a Media Server ${NC}"
+    echo -e "  ${GRAY}Jellyfin is included in your Privacy Box. Watch your media on any device!${NC}"
     echo ""
-    echo -e "  ${YELLOW}Choose ONE:${NC}"
-    echo -e "    ${CYAN}Jellyfin (FREE): https://jellyfin.org/downloads${NC}"
-    echo -e "    ${CYAN}Emby (Free/Paid): https://emby.media/download.html${NC}"
+    echo -e "  ${YELLOW}Press ENTER to open Jellyfin in your browser...${NC}"
+    read -r
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        open "http://localhost:8096"
+    else
+        xdg-open "http://localhost:8096" 2>/dev/null || echo -e "  ${CYAN}Open: http://localhost:8096${NC}"
+    fi
     echo ""
-    echo -e "  ${WHITE}During setup, add your media library folder:${NC}"
-    echo -e "    ${GRAY}TV Shows:  ${CYAN}${SCRIPT_DIR}/media/tv${NC}"
-    echo -e "    ${GRAY}Movies:    ${CYAN}${SCRIPT_DIR}/media/movies${NC}"
+    echo -e "  ${WHITE} STEP 1: Initial Setup ${NC}"
     echo ""
-    echo -e "  ${WHITE} STEP 2: Connect from Other Devices ${NC}"
+    echo -e "  ${WHITE}1. Select your language and click Next${NC}"
+    echo -e "  ${WHITE}2. Create your admin username and password${NC}"
+    echo -e "  ${WHITE}3. Click 'Add Media Library' and add:${NC}"
+    echo ""
+    echo -e "     ${YELLOW}For Movies:${NC}"
+    echo -e "       ${GRAY}- Content type: Movies${NC}"
+    echo -e "       ${GRAY}- Click '+' next to Folders${NC}"
+    echo -e "       ${GRAY}- Enter: ${CYAN}/data/movies${NC}"
+    echo ""
+    echo -e "     ${YELLOW}For TV Shows:${NC}"
+    echo -e "       ${GRAY}- Content type: Shows${NC}"
+    echo -e "       ${GRAY}- Click '+' next to Folders${NC}"
+    echo -e "       ${GRAY}- Enter: ${CYAN}/data/tvshows${NC}"
+    echo ""
+    echo -e "  ${WHITE}4. Finish the setup wizard${NC}"
+    echo ""
+    echo -e "  ${WHITE} STEP 2: Watch on Other Devices ${NC}"
     echo ""
     echo -e "  ${YELLOW}Same Network (Home WiFi):${NC}"
-    echo -e "    ${WHITE}1. Find this computer's IP: ${CYAN}ip addr${NC} or ${CYAN}ifconfig${NC}"
-    echo -e "       ${GRAY}Look for your local IP (e.g., 192.168.1.100)${NC}"
-    echo -e "    ${WHITE}2. On your other device, open the Jellyfin/Emby app${NC}"
-    echo -e "    ${WHITE}3. Enter: ${CYAN}http://YOUR-IP:8096${NC} (Jellyfin) or ${CYAN}:8920${NC} (Emby)"
-    echo ""
-    echo -e "  ${WHITE} CAN'T CONNECT? ${NC}"
-    echo ""
-    echo -e "  ${YELLOW}If devices on your network can't reach the server:${NC}"
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo -e "    ${WHITE}macOS: System Preferences > Security & Privacy > Firewall${NC}"
-        echo -e "    ${WHITE}Add Jellyfin/Emby to allowed apps${NC}"
+        echo -e "    ${WHITE}1. Find this Mac's IP: ${CYAN}ifconfig | grep 'inet '${NC}"
     else
-        echo -e "    ${WHITE}Linux: Allow the port through your firewall:${NC}"
-        echo -e "    ${CYAN}sudo ufw allow 8096/tcp${NC}  (Jellyfin)"
-        echo -e "    ${CYAN}sudo ufw allow 8920/tcp${NC}  (Emby)"
+        echo -e "    ${WHITE}1. Find this computer's IP: ${CYAN}ip addr${NC} or ${CYAN}hostname -I${NC}"
+    fi
+    echo -e "       ${GRAY}Look for your local IP (e.g., 192.168.1.100)${NC}"
+    echo -e "    ${WHITE}2. On your TV/phone/tablet, download the Jellyfin app${NC}"
+    echo -e "    ${WHITE}3. Enter server address: ${CYAN}http://YOUR-IP:8096${NC}"
+    echo ""
+    echo -e "  ${WHITE} CAN'T CONNECT FROM OTHER DEVICES? ${NC}"
+    echo ""
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo -e "  ${YELLOW}macOS Firewall may be blocking connections:${NC}"
+        echo -e "    ${WHITE}System Preferences > Security & Privacy > Firewall > Firewall Options${NC}"
+        echo -e "    ${WHITE}Add Docker or allow incoming connections${NC}"
+    else
+        echo -e "  ${YELLOW}Linux firewall may be blocking connections:${NC}"
+        echo -e "    ${CYAN}sudo ufw allow 8096/tcp${NC}"
     fi
 
     press_enter
@@ -554,6 +574,7 @@ show_setup_guide() {
     echo -e "    ${WHITE}Prowlarr:     http://localhost:8181${NC}"
     echo -e "    ${WHITE}Sonarr:       http://localhost:8989${NC}"
     echo -e "    ${WHITE}Radarr:       http://localhost:7878${NC}"
+    echo -e "    ${CYAN}Jellyfin:     http://localhost:8096${NC} ${GRAY}(Media Server)${NC}"
     echo ""
     echo -e "  ${YELLOW}Your media folder:${NC}"
     echo -e "    ${GRAY}${SCRIPT_DIR}/media/${NC}"

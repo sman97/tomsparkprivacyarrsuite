@@ -11,10 +11,16 @@ A setup script that automatically deploys a complete *arr stack (Sonarr, Radarr,
 | Platform | Instructions |
 |----------|--------------|
 | **Windows** | Download ZIP → Extract → Double-click **`Setup-PrivacyBox.bat`** |
-| **macOS** | Download ZIP → Extract → Open Terminal → `chmod +x setup.sh && ./setup.sh` |
-| **Linux** | Download ZIP → Extract → Open Terminal → `chmod +x setup.sh && ./setup.sh` |
+| **macOS** | One-liner below, or download ZIP → `chmod +x setup.sh && ./setup.sh` |
+| **Linux** | One-liner below, or download ZIP → `chmod +x setup.sh && ./setup.sh` |
 
 [![Download ZIP](https://img.shields.io/badge/Download-ZIP-blue?style=for-the-badge&logo=github)](https://github.com/loponai/tomsparkprivacyarrsuite/archive/refs/heads/main.zip)
+
+### One-Liner Install (Mac/Linux)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/loponai/tomsparkprivacyarrsuite/main/install.sh | bash
+```
 
 > **Need NordVPN?** [Get 4 extra months FREE + discount!](https://nordvpn.tomspark.tech/)
 
@@ -25,6 +31,7 @@ A setup script that automatically deploys a complete *arr stack (Sonarr, Radarr,
 - **One-click setup** - No manual file editing required
 - **Cross-platform** - Works on Windows, macOS, and Linux
 - **VPN Kill Switch** - All traffic routed through Gluetun (NordVPN)
+- **Jellyfin included** - Stream your media to any device out of the box
 - **Pre-configured ports** - Avoids common port conflicts
 - **Guided configuration** - Step-by-step instructions for connecting all apps
 - **Safe defaults** - Credentials properly quoted, secure settings enabled
@@ -37,6 +44,7 @@ A setup script that automatically deploys a complete *arr stack (Sonarr, Radarr,
 | Prowlarr | `localhost:8181` | Indexer manager |
 | Sonarr | `localhost:8989` | TV show manager |
 | Radarr | `localhost:7878` | Movie manager |
+| Jellyfin | `localhost:8096` | Media server (watch on any device!) |
 | Gluetun | - | VPN tunnel (NordVPN) |
 
 ## Requirements

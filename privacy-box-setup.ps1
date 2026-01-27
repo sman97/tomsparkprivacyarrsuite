@@ -355,6 +355,22 @@ services:
     depends_on:
       - gluetun
     restart: always
+
+  # --- Media Server (accessible on local network) ---
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    ports:
+      - 8096:8096   # Jellyfin Web UI
+    volumes:
+      - ${ROOT_DIR}/config/jellyfin:/config
+      - ${ROOT_DIR}/media/tv:/data/tvshows
+      - ${ROOT_DIR}/media/movies:/data/movies
+    restart: always
 '@
 
     $content | Out-File -FilePath "$Path\docker-compose.yml" -Encoding UTF8 -NoNewline
@@ -591,48 +607,61 @@ function Show-SetupGuide {
 
     Press-Enter
 
-    # --- Media Player Setup (Optional) ---
+    # --- Jellyfin Setup ---
     Write-Banner
-    Write-Host "  OPTIONAL: Watch Your Media on Other Devices" -ForegroundColor Magenta
-    Write-Host "  --------------------------------------------" -ForegroundColor DarkGray
-    Write-Host ""
-    Write-Host "  Want to watch your downloaded media on a TV, phone, or tablet?" -ForegroundColor White
-    Write-Host "  Install Jellyfin (free) or Emby on this PC, then connect from any device!" -ForegroundColor Gray
+    Write-Host "  SETUP GUIDE: Jellyfin (Media Server)" -ForegroundColor Magenta
+    Write-Host "  ------------------------------------" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  " -NoNewline
-    Write-Host " STEP 1: Install a Media Server " -BackgroundColor DarkBlue -ForegroundColor White
+    Write-Host " JELLYFIN IS ALREADY INSTALLED! " -BackgroundColor DarkGreen -ForegroundColor White
     Write-Host ""
-    Write-Host "  Choose ONE:" -ForegroundColor Yellow
-    Write-Host "    Jellyfin (FREE): https://jellyfin.org/downloads" -ForegroundColor Cyan
-    Write-Host "    Emby (Free/Paid): https://emby.media/download.html" -ForegroundColor Cyan
+    Write-Host "  Jellyfin is included in your Privacy Box. Watch your media on any device!" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "  During setup, add your media library folder:" -ForegroundColor White
-    Write-Host "    TV Shows:  " -ForegroundColor Gray -NoNewline
-    Write-Host "C:\Users\$env:USERNAME\Desktop\PrivacyServer\media\tv" -ForegroundColor Cyan
-    Write-Host "    Movies:    " -ForegroundColor Gray -NoNewline
-    Write-Host "C:\Users\$env:USERNAME\Desktop\PrivacyServer\media\movies" -ForegroundColor Cyan
+    Write-Host "  Press ENTER to open Jellyfin in your browser..." -ForegroundColor Yellow
+    Read-Host | Out-Null
+    Start-Process "http://localhost:8096"
     Write-Host ""
     Write-Host "  " -NoNewline
-    Write-Host " STEP 2: Connect from Other Devices " -BackgroundColor DarkBlue -ForegroundColor White
+    Write-Host " STEP 1: Initial Setup " -BackgroundColor DarkBlue -ForegroundColor White
+    Write-Host ""
+    Write-Host "  1. Select your language and click Next" -ForegroundColor White
+    Write-Host "  2. Create your admin username and password" -ForegroundColor White
+    Write-Host "  3. Click 'Add Media Library' and add:" -ForegroundColor White
+    Write-Host ""
+    Write-Host "     For Movies:" -ForegroundColor Yellow
+    Write-Host "       - Content type: Movies" -ForegroundColor Gray
+    Write-Host "       - Click '+' next to Folders" -ForegroundColor Gray
+    Write-Host "       - Enter: " -ForegroundColor Gray -NoNewline
+    Write-Host "/data/movies" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "     For TV Shows:" -ForegroundColor Yellow
+    Write-Host "       - Content type: Shows" -ForegroundColor Gray
+    Write-Host "       - Click '+' next to Folders" -ForegroundColor Gray
+    Write-Host "       - Enter: " -ForegroundColor Gray -NoNewline
+    Write-Host "/data/tvshows" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  4. Finish the setup wizard" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  " -NoNewline
+    Write-Host " STEP 2: Watch on Other Devices " -BackgroundColor DarkBlue -ForegroundColor White
     Write-Host ""
     Write-Host "  Same Network (Home WiFi):" -ForegroundColor Yellow
     Write-Host "    1. Find this PC's IP: Open CMD and type 'ipconfig'" -ForegroundColor White
     Write-Host "       Look for 'IPv4 Address' (e.g., 192.168.1.100)" -ForegroundColor Gray
-    Write-Host "    2. On your other device, open the Jellyfin/Emby app" -ForegroundColor White
-    Write-Host "    3. Enter: " -ForegroundColor White -NoNewline
-    Write-Host "http://YOUR-PC-IP:8096" -ForegroundColor Cyan -NoNewline
-    Write-Host " (Jellyfin) or " -ForegroundColor White -NoNewline
-    Write-Host ":8920" -ForegroundColor Cyan -NoNewline
-    Write-Host " (Emby)" -ForegroundColor White
+    Write-Host "    2. On your TV/phone/tablet, download the Jellyfin app" -ForegroundColor White
+    Write-Host "    3. Enter server address: " -ForegroundColor White -NoNewline
+    Write-Host "http://YOUR-PC-IP:8096" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  " -NoNewline
-    Write-Host " CAN'T CONNECT? " -BackgroundColor DarkRed -ForegroundColor White
+    Write-Host " CAN'T CONNECT FROM OTHER DEVICES? " -BackgroundColor DarkRed -ForegroundColor White
     Write-Host ""
-    Write-Host "  If devices on your network can't reach the server:" -ForegroundColor Yellow
+    Write-Host "  Windows Firewall may be blocking connections:" -ForegroundColor Yellow
     Write-Host "    1. Open Windows Defender Firewall" -ForegroundColor White
     Write-Host "    2. Click 'Allow an app through firewall'" -ForegroundColor White
     Write-Host "    3. Click 'Change settings' then 'Allow another app'" -ForegroundColor White
-    Write-Host "    4. Browse to Jellyfin/Emby and add it" -ForegroundColor White
+    Write-Host "    4. Add: " -ForegroundColor White -NoNewline
+    Write-Host "C:\Windows\System32\cmd.exe" -ForegroundColor Cyan -NoNewline
+    Write-Host " (Docker handles the rest)" -ForegroundColor Gray
     Write-Host "    5. Check BOTH 'Private' and 'Public' boxes" -ForegroundColor White
     Write-Host ""
     Write-Host "  Or allow the port directly (PowerShell as Admin):" -ForegroundColor Gray
@@ -710,6 +739,8 @@ function Show-SetupGuide {
     Write-Host "    Prowlarr:     http://localhost:8181" -ForegroundColor White
     Write-Host "    Sonarr:       http://localhost:8989" -ForegroundColor White
     Write-Host "    Radarr:       http://localhost:7878" -ForegroundColor White
+    Write-Host "    Jellyfin:     http://localhost:8096" -ForegroundColor Cyan -NoNewline
+    Write-Host " (Media Server)" -ForegroundColor Gray
     Write-Host ""
     Write-Host "  Your media folder:" -ForegroundColor Yellow
     Write-Host "    $env:USERPROFILE\Desktop\PrivacyServer\media\" -ForegroundColor Gray
