@@ -169,25 +169,28 @@ function Get-ServerCountry {
     Write-Host "  STEP 2: SERVER LOCATION" -ForegroundColor Magenta
     Write-Host "  -----------------------" -ForegroundColor DarkGray
     Write-Host ""
+    Write-Host "  Pick the closest country to you for best speeds!" -ForegroundColor Yellow
+    Write-Host "  (NordVPN's no-logs policy protects you on ANY server)" -ForegroundColor Gray
+    Write-Host ""
     Write-Host "  Popular choices:" -ForegroundColor White
-    Write-Host "    1. Switzerland (Best privacy laws)" -ForegroundColor Gray
-    Write-Host "    2. Netherlands (Fast, torrent-friendly)" -ForegroundColor Gray
-    Write-Host "    3. Sweden (Strong privacy)" -ForegroundColor Gray
-    Write-Host "    4. Romania (No data retention)" -ForegroundColor Gray
+    Write-Host "    1. United States" -ForegroundColor Gray
+    Write-Host "    2. United Kingdom" -ForegroundColor Gray
+    Write-Host "    3. Canada" -ForegroundColor Gray
+    Write-Host "    4. Netherlands" -ForegroundColor Gray
     Write-Host "    5. Custom" -ForegroundColor Gray
     Write-Host ""
     Write-Host "  Select (1-5) [default: 1]: " -ForegroundColor Yellow -NoNewline
     $choice = Read-Host
 
     switch ($choice) {
-        "2" { return "Netherlands" }
-        "3" { return "Sweden" }
-        "4" { return "Romania" }
+        "2" { return "United Kingdom" }
+        "3" { return "Canada" }
+        "4" { return "Netherlands" }
         "5" {
             Write-Host "  Enter country name (capitalize first letter): " -ForegroundColor Yellow -NoNewline
             return Read-Host
         }
-        default { return "Switzerland" }
+        default { return "United States" }
     }
 }
 
