@@ -592,6 +592,19 @@ services:
     volumes:
       - ${ROOT_DIR}/config/notifiarr:/config
     restart: always
+
+  # --- FlareSolverr (Optional - enable with: docker compose --profile flaresolverr up -d) ---
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    profiles:
+      - flaresolverr
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ}
+    ports:
+      - 8191:8191   # FlareSolverr
+    restart: always
 '@
 
     $content | Out-File -FilePath "$Path\docker-compose.yml" -Encoding UTF8 -NoNewline
@@ -1138,6 +1151,52 @@ function Setup-Notifiarr {
     Write-Host ""
 }
 
+# --- Bonus: FlareSolverr Setup ---
+function Setup-FlareSolverr {
+    param([string]$Path)
+
+    Write-Banner
+    Write-Host "  BONUS: Cloudflare Bypass with FlareSolverr" -ForegroundColor Magenta
+    Write-Host "  -------------------------------------------" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Some indexers are protected by Cloudflare anti-bot challenges." -ForegroundColor White
+    Write-Host "  FlareSolverr runs a headless browser to solve these automatically," -ForegroundColor White
+    Write-Host "  so Prowlarr can access protected indexers without manual intervention." -ForegroundColor White
+    Write-Host ""
+
+    if (-not (Ask-YesNo "Would you like to enable FlareSolverr?")) {
+        Write-Host ""
+        Write-Info "Skipping FlareSolverr setup. You can enable it later!"
+        Write-Host ""
+        Write-Host "  To enable later, run:" -ForegroundColor Gray
+        Write-Host "    docker compose --profile flaresolverr up -d" -ForegroundColor Cyan
+        return
+    }
+
+    Write-Host ""
+    Write-Step "1" "Starting FlareSolverr container..."
+    Push-Location $Path
+    docker compose --profile flaresolverr up -d 2>&1 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+    Pop-Location
+
+    Write-Host ""
+    Write-Success "FlareSolverr is running!"
+    Write-Host ""
+    Write-Host "  Configure FlareSolverr in Prowlarr:" -ForegroundColor Yellow
+    Write-Host "    1. Open Prowlarr: " -ForegroundColor White -NoNewline
+    Write-Host "http://localhost:8181" -ForegroundColor Cyan
+    Write-Host "    2. Go to: Settings > Indexers" -ForegroundColor White
+    Write-Host "    3. Click '+' under 'Indexer Proxies'" -ForegroundColor White
+    Write-Host "    4. Select 'FlareSolverr'" -ForegroundColor White
+    Write-Host "    5. Set Host to: " -ForegroundColor White -NoNewline
+    Write-Host "http://flaresolverr:8191" -ForegroundColor Cyan
+    Write-Host "    6. Click 'Test' then 'Save'" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Prowlarr will now automatically bypass Cloudflare challenges!" -ForegroundColor Green
+
+    Press-Enter
+}
+
 # --- Main Execution ---
 function Main {
     Write-Banner
@@ -1231,6 +1290,7 @@ function Main {
         Press-Enter
         Show-SetupGuide
         Setup-Notifiarr -Path $InstallPath
+        Setup-FlareSolverr -Path $InstallPath
     } else {
         Write-Host ""
         Write-Error-Custom "Setup failed. Please check your VPN credentials."

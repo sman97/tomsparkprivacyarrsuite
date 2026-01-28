@@ -119,6 +119,7 @@ curl -fsSL https://raw.githubusercontent.com/loponai/tomsparkprivacyarrsuite/mai
 - **VPN Kill Switch** - All traffic routed through Gluetun
 - **Jellyfin included** - Stream your media to any device out of the box
 - **Discord notifications** - Optional Notifiarr integration for download alerts
+- **FlareSolverr support** - Optional Cloudflare bypass for protected indexers
 - **Pre-configured ports** - Avoids common port conflicts
 - **Guided configuration** - Step-by-step instructions for connecting all apps
 - **Safe defaults** - Credentials properly quoted, secure settings enabled
@@ -133,6 +134,7 @@ curl -fsSL https://raw.githubusercontent.com/loponai/tomsparkprivacyarrsuite/mai
 | Radarr | `localhost:7878` | Movie manager |
 | Jellyfin | `localhost:8096` | Media server (watch on any device!) |
 | Notifiarr | `localhost:5454` | Discord notifications (optional) |
+| FlareSolverr | `localhost:8191` | Cloudflare bypass proxy (optional) |
 | Gluetun | - | VPN tunnel (NordVPN/ProtonVPN/Surfshark) |
 
 ## What You'll Need
@@ -183,6 +185,9 @@ docker ps
 # Enable Notifiarr (Discord notifications)
 # First add NOTIFIARR_API_KEY=your-key to .env, then:
 docker compose --profile notifications up -d
+
+# Enable FlareSolverr (Cloudflare bypass for indexers)
+docker compose --profile flaresolverr up -d
 ```
 
 ## Discord Notifications (Notifiarr)
@@ -224,6 +229,29 @@ On [notifiarr.com](https://notifiarr.com):
 3. Set up your Discord channel for notifications
 
 That's it! You'll now get Discord alerts for grabs, downloads, upgrades, and more.
+
+## Cloudflare Bypass (FlareSolverr)
+
+Some indexers use Cloudflare anti-bot protection which blocks automated access. [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) runs a headless browser to solve these challenges automatically.
+
+**The setup script will ask if you want this at the end.** If you skipped it or want to add it later:
+
+### Enable FlareSolverr
+
+1. **Start FlareSolverr:**
+   ```bash
+   docker compose --profile flaresolverr up -d
+   ```
+
+2. **Configure in Prowlarr:**
+   - Open Prowlarr at `http://localhost:8181`
+   - Go to **Settings > Indexers**
+   - Click **+** under "Indexer Proxies"
+   - Select **FlareSolverr**
+   - Set Host to: `http://flaresolverr:8191`
+   - Click **Test** then **Save**
+
+Prowlarr will now automatically route requests through FlareSolverr when indexers require Cloudflare bypass. No API key or account needed.
 
 ## Troubleshooting
 
@@ -320,6 +348,7 @@ Questions? Join the **[Tom Spark Discord](https://discord.gg/uPdRcKxEVS)** for s
 - [Gluetun](https://github.com/qdm12/gluetun) - VPN client
 - [LinuxServer.io](https://www.linuxserver.io/) - Docker images
 - [Notifiarr](https://notifiarr.com) - Discord notifications
+- [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) - Cloudflare bypass proxy
 - Tom Spark - Original tutorial
 
 ---

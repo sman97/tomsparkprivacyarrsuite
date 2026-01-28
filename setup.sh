@@ -882,6 +882,47 @@ setup_notifiarr() {
     echo ""
 }
 
+# --- Bonus: FlareSolverr Setup ---
+setup_flaresolverr() {
+    write_banner
+    echo -e "  ${MAGENTA}BONUS: Cloudflare Bypass with FlareSolverr${NC}"
+    echo -e "  ${DARKGRAY}-------------------------------------------${NC}"
+    echo ""
+    echo -e "  ${WHITE}Some indexers are protected by Cloudflare anti-bot challenges.${NC}"
+    echo -e "  ${WHITE}FlareSolverr runs a headless browser to solve these automatically,${NC}"
+    echo -e "  ${WHITE}so Prowlarr can access protected indexers without manual intervention.${NC}"
+    echo ""
+
+    if ! ask_yes_no "Would you like to enable FlareSolverr?"; then
+        echo ""
+        write_info "Skipping FlareSolverr setup. You can enable it later!"
+        echo ""
+        echo -e "  ${GRAY}To enable later, run:${NC}"
+        echo -e "    ${CYAN}docker compose --profile flaresolverr up -d${NC}"
+        return 0
+    fi
+
+    echo ""
+    write_step "1" "Starting FlareSolverr container..."
+    cd "$SCRIPT_DIR" || exit 1
+    docker compose --profile flaresolverr up -d 2>&1 | sed 's/^/      /'
+
+    echo ""
+    write_success "FlareSolverr is running!"
+    echo ""
+    echo -e "  ${YELLOW}Configure FlareSolverr in Prowlarr:${NC}"
+    echo -e "    ${WHITE}1. Open Prowlarr: ${CYAN}http://localhost:8181${NC}"
+    echo -e "    ${WHITE}2. Go to: Settings > Indexers${NC}"
+    echo -e "    ${WHITE}3. Click '+' under 'Indexer Proxies'${NC}"
+    echo -e "    ${WHITE}4. Select 'FlareSolverr'${NC}"
+    echo -e "    ${WHITE}5. Set Host to: ${CYAN}http://flaresolverr:8191${NC}"
+    echo -e "    ${WHITE}6. Click 'Test' then 'Save'${NC}"
+    echo ""
+    echo -e "  ${GREEN}Prowlarr will now automatically bypass Cloudflare challenges!${NC}"
+
+    press_enter
+}
+
 # --- Main Execution ---
 main() {
     write_banner
@@ -963,6 +1004,7 @@ main() {
         press_enter
         show_setup_guide
         setup_notifiarr
+        setup_flaresolverr
     else
         echo ""
         write_error "Setup failed. Please check your VPN credentials."
