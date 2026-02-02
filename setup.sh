@@ -163,6 +163,10 @@ show_arr_overview() {
     echo -e "  ${CYAN}│${NC} ${GREEN}Sonarr${NC}      ${CYAN}│${NC} ${GRAY}Finds & organizes TV shows automatically${NC} ${CYAN}│${NC}"
     echo -e "  ${CYAN}│${NC} ${GREEN}Radarr${NC}      ${CYAN}│${NC} ${GRAY}Finds & organizes movies automatically${NC}   ${CYAN}│${NC}"
     echo -e "  ${CYAN}│${NC} ${GREEN}Jellyfin${NC}    ${CYAN}│${NC} ${GRAY}Streams your media (like personal Netflix)${NC}${CYAN}│${NC}"
+    echo -e "  ${CYAN}├─────────────┼──────────────────────────────────────────┤${NC}"
+    echo -e "  ${CYAN}│${NC} ${YELLOW}Optional:${NC}   ${CYAN}│${NC}                                          ${CYAN}│${NC}"
+    echo -e "  ${CYAN}│${NC} ${GREEN}SABnzbd${NC}     ${CYAN}│${NC} ${GRAY}Downloads from Usenet (alternative to torrents)${NC}${CYAN}│${NC}"
+    echo -e "  ${CYAN}│${NC} ${GREEN}Lidarr${NC}      ${CYAN}│${NC} ${GRAY}Finds & organizes music automatically${NC}   ${CYAN}│${NC}"
     echo -e "  ${CYAN}└─────────────┴──────────────────────────────────────────┘${NC}"
     echo ""
     echo -e "  ${WHITE}How they connect:${NC}"
@@ -824,6 +828,13 @@ them automatically."
     echo -e "    ${GRAY}- Radarr Server: ${CYAN}http://localhost:7878${NC}"
     echo -e "    ${GRAY}- API Key: ${CYAN}(paste the Radarr API key you copied)${NC}"
     echo -e "    ${GRAY}- Click 'Test' then 'Save'${NC}"
+    echo ""
+    echo -e "  ${GRAY}If you enabled Lidarr, add it too:${NC}"
+    echo -e "    ${GRAY}- Click '+' and select 'Lidarr'${NC}"
+    echo -e "    ${GRAY}- Prowlarr Server: ${CYAN}http://localhost:9696${NC}"
+    echo -e "    ${GRAY}- Lidarr Server: ${CYAN}http://localhost:8686${NC}"
+    echo -e "    ${GRAY}- API Key: ${CYAN}(from Lidarr > Settings > General)${NC}"
+    echo -e "    ${GRAY}- Click 'Test' then 'Save'${NC}"
 
     press_enter
 
@@ -859,6 +870,11 @@ browser. It's completely free and open-source."
     echo -e "       ${GRAY}- Content type: Shows${NC}"
     echo -e "       ${GRAY}- Click '+' next to Folders${NC}"
     echo -e "       ${GRAY}- Enter: ${CYAN}/data/tvshows${NC}"
+    echo ""
+    echo -e "     ${YELLOW}For Music (if you enabled Lidarr):${NC}"
+    echo -e "       ${GRAY}- Content type: Music${NC}"
+    echo -e "       ${GRAY}- Click '+' next to Folders${NC}"
+    echo -e "       ${GRAY}- Enter: ${CYAN}/data/music${NC}"
     echo ""
     echo -e "  ${WHITE}4. Finish the setup wizard${NC}"
     echo ""
@@ -944,6 +960,13 @@ browser. It's completely free and open-source."
     echo -e "    ${WHITE}Sonarr:       http://localhost:8989${NC}"
     echo -e "    ${WHITE}Radarr:       http://localhost:7878${NC}"
     echo -e "    ${CYAN}Jellyfin:     http://localhost:8096${NC} ${GRAY}(Media Server)${NC}"
+    # Show optional services if they were enabled
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^sabnzbd$'; then
+        echo -e "    ${WHITE}SABnzbd:      http://localhost:8085${NC} ${GRAY}(Usenet Downloads)${NC}"
+    fi
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^lidarr$'; then
+        echo -e "    ${WHITE}Lidarr:       http://localhost:8686${NC} ${GRAY}(Music Manager)${NC}"
+    fi
     echo ""
     echo -e "  ${YELLOW}Your media folder:${NC}"
     echo -e "    ${GRAY}${SCRIPT_DIR}/media/${NC}"
@@ -1130,6 +1153,138 @@ setup_flaresolverr() {
     press_enter
 }
 
+# --- Bonus: SABnzbd Setup ---
+setup_sabnzbd() {
+    write_banner
+    echo -e "  ${MAGENTA}BONUS: Usenet Downloads with SABnzbd${NC}"
+    echo -e "  ${DARKGRAY}-------------------------------------${NC}"
+    echo ""
+    echo -e "  ${WHITE}SABnzbd is a Usenet download client — an alternative to torrents.${NC}"
+    echo -e "  ${WHITE}Usenet downloads are SSL-encrypted and typically faster.${NC}"
+    echo -e "  ${WHITE}You'll need a Usenet provider subscription (e.g., Newshosting, Eweka).${NC}"
+    echo ""
+
+    if ! ask_yes_no "Would you like to enable Usenet downloads (SABnzbd)?"; then
+        echo ""
+        write_info "Skipping SABnzbd setup. You can enable it later!"
+        echo ""
+        echo -e "  ${GRAY}To enable later, run:${NC}"
+        echo -e "    ${CYAN}docker compose --profile sabnzbd up -d${NC}"
+        return 0
+    fi
+
+    echo ""
+    write_step "1" "Starting SABnzbd container..."
+    cd "$SCRIPT_DIR" || exit 1
+    docker compose --profile sabnzbd up -d 2>&1 | sed 's/^/      /'
+
+    echo ""
+    write_success "SABnzbd is running!"
+
+    press_enter
+
+    write_banner
+    echo -e "  ${MAGENTA}Configure SABnzbd${NC}"
+    echo -e "  ${DARKGRAY}-----------------${NC}"
+    echo ""
+    echo -e "  ${YELLOW}Press ENTER to open SABnzbd in your browser...${NC}"
+    read -r
+    open_url "http://localhost:8085"
+    echo ""
+    echo -e "  ${WHITE}1. Follow the SABnzbd Quick-Start Wizard${NC}"
+    echo ""
+    echo -e "  ${YELLOW}2. Add your Usenet provider:${NC}"
+    echo -e "     ${WHITE}- Host: ${CYAN}(from your Usenet provider, e.g., news.newshosting.com)${NC}"
+    echo -e "     ${WHITE}- Port: ${CYAN}563${NC} ${GRAY}(SSL)${NC}"
+    echo -e "     ${WHITE}- Username & Password: ${CYAN}(your Usenet account credentials)${NC}"
+    echo -e "     ${WHITE}- SSL: ${CYAN}Yes${NC}"
+    echo ""
+    echo -e "  ${YELLOW}3. Use SABnzbd as a download client in Sonarr/Radarr/Lidarr:${NC}"
+    echo -e "     ${WHITE}- Go to: Settings > Download Clients${NC}"
+    echo -e "     ${WHITE}- Click '+' and select 'SABnzbd'${NC}"
+    echo -e "     ${WHITE}- Host: ${CYAN}sabnzbd${NC}"
+    echo -e "     ${WHITE}- Port: ${CYAN}8080${NC}"
+    echo -e "     ${WHITE}- API Key: ${CYAN}(from SABnzbd > Config > General)${NC}"
+    echo -e "     ${WHITE}- Click 'Test' then 'Save'${NC}"
+    echo ""
+    echo -e "  ${GREEN}SABnzbd is ready for Usenet downloads!${NC}"
+
+    press_enter
+}
+
+# --- Bonus: Lidarr Setup ---
+setup_lidarr() {
+    write_banner
+    echo -e "  ${MAGENTA}BONUS: Music Management with Lidarr${NC}"
+    echo -e "  ${DARKGRAY}------------------------------------${NC}"
+    echo ""
+    echo -e "  ${WHITE}Lidarr automatically finds, downloads, and organizes music.${NC}"
+    echo -e "  ${WHITE}It works just like Sonarr/Radarr but for music albums and artists.${NC}"
+    echo -e "  ${WHITE}Your music will be available in Jellyfin for streaming!${NC}"
+    echo ""
+
+    if ! ask_yes_no "Would you like to enable music management (Lidarr)?"; then
+        echo ""
+        write_info "Skipping Lidarr setup. You can enable it later!"
+        echo ""
+        echo -e "  ${GRAY}To enable later, run:${NC}"
+        echo -e "    ${CYAN}docker compose --profile lidarr up -d${NC}"
+        return 0
+    fi
+
+    echo ""
+    write_step "1" "Starting Lidarr container..."
+    cd "$SCRIPT_DIR" || exit 1
+    docker compose --profile lidarr up -d 2>&1 | sed 's/^/      /'
+
+    echo ""
+    write_success "Lidarr is running!"
+
+    press_enter
+
+    write_banner
+    echo -e "  ${MAGENTA}Configure Lidarr${NC}"
+    echo -e "  ${DARKGRAY}----------------${NC}"
+    echo ""
+    echo -e "  ${YELLOW}Press ENTER to open Lidarr in your browser...${NC}"
+    read -r
+    open_url "http://localhost:8686"
+    echo ""
+    echo -e "  ${WHITE}1. Create your admin account when prompted${NC}"
+    echo ""
+    echo -e "  ${YELLOW}2. Add Root Folder (where music is saved):${NC}"
+    echo -e "     ${WHITE}- Go to: Settings > Media Management${NC}"
+    echo -e "     ${WHITE}- Scroll down and click 'Add Root Folder'${NC}"
+    echo -e "     ${WHITE}- Enter path: ${CYAN}/data/media/music${NC}"
+    echo -e "     ${WHITE}- Click 'OK'${NC}"
+    echo ""
+    echo -e "  ${YELLOW}3. Add Download Client:${NC}"
+    echo -e "     ${WHITE}- Go to: Settings > Download Clients${NC}"
+    echo -e "     ${WHITE}- Click '+' and select 'qBittorrent'${NC}"
+    echo -e "     ${WHITE}- Host: ${CYAN}localhost${NC}"
+    echo -e "     ${WHITE}- Port: ${CYAN}8080${NC}"
+    echo -e "     ${WHITE}- Username: ${CYAN}admin${NC}"
+    echo -e "     ${WHITE}- Password: ${CYAN}(your qBittorrent password)${NC}"
+    echo -e "     ${WHITE}- Click 'Test' then 'Save'${NC}"
+    echo ""
+    echo -e "  ${YELLOW}4. Copy your API Key (for Prowlarr):${NC}"
+    echo -e "     ${WHITE}- Go to: Settings > General${NC}"
+    echo -e "     ${WHITE}- Copy the 'API Key'${NC}"
+    echo ""
+    echo -e "  ${YELLOW}5. Connect in Prowlarr:${NC}"
+    echo -e "     ${WHITE}- Open Prowlarr: ${CYAN}http://localhost:8181${NC}"
+    echo -e "     ${WHITE}- Go to: Settings > Apps${NC}"
+    echo -e "     ${WHITE}- Click '+' and select 'Lidarr'${NC}"
+    echo -e "     ${WHITE}- Prowlarr Server: ${CYAN}http://localhost:9696${NC}"
+    echo -e "     ${WHITE}- Lidarr Server: ${CYAN}http://localhost:8686${NC}"
+    echo -e "     ${WHITE}- API Key: ${CYAN}(paste the Lidarr API key)${NC}"
+    echo -e "     ${WHITE}- Click 'Test' then 'Save'${NC}"
+    echo ""
+    echo -e "  ${GREEN}Lidarr is ready! Add artists and let it find your music.${NC}"
+
+    press_enter
+}
+
 # --- Main Execution ---
 main() {
     write_banner
@@ -1204,6 +1359,7 @@ browsing stays on your regular connection."
     mkdir -p "$SCRIPT_DIR/media/downloads"
     mkdir -p "$SCRIPT_DIR/media/tv"
     mkdir -p "$SCRIPT_DIR/media/movies"
+    mkdir -p "$SCRIPT_DIR/media/music"
     write_success "Directories created"
 
     write_step "2" "Generating .env file..."
@@ -1218,6 +1374,8 @@ browsing stays on your regular connection."
         show_setup_guide
         setup_notifiarr
         setup_flaresolverr
+        setup_sabnzbd
+        setup_lidarr
     else
         echo ""
         write_error "Setup failed. Please check your VPN credentials."

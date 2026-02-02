@@ -189,6 +189,22 @@ function Show-ArrOverview {
     Write-Host "Streams your media (like personal Netflix)" -ForegroundColor Gray -NoNewline
     Write-Host "|" -ForegroundColor Cyan
     Write-Host "  +---------------+--------------------------------------------+" -ForegroundColor Cyan
+    Write-Host "  | " -ForegroundColor Cyan -NoNewline
+    Write-Host "Optional:" -ForegroundColor Yellow -NoNewline
+    Write-Host "      | " -ForegroundColor Cyan -NoNewline
+    Write-Host "                                            " -ForegroundColor Gray -NoNewline
+    Write-Host "|" -ForegroundColor Cyan
+    Write-Host "  | " -ForegroundColor Cyan -NoNewline
+    Write-Host "SABnzbd" -ForegroundColor Green -NoNewline
+    Write-Host "       | " -ForegroundColor Cyan -NoNewline
+    Write-Host "Downloads from Usenet (alternative to torrents)" -ForegroundColor Gray -NoNewline
+    Write-Host "|" -ForegroundColor Cyan
+    Write-Host "  | " -ForegroundColor Cyan -NoNewline
+    Write-Host "Lidarr" -ForegroundColor Green -NoNewline
+    Write-Host "        | " -ForegroundColor Cyan -NoNewline
+    Write-Host "Finds & organizes music automatically" -ForegroundColor Gray -NoNewline
+    Write-Host "   |" -ForegroundColor Cyan
+    Write-Host "  +---------------+--------------------------------------------+" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  How they connect:" -ForegroundColor White
     Write-Host ""
@@ -720,6 +736,7 @@ services:
       - 8181:9696   # Prowlarr (Safe Port - avoids Windows conflicts)
       - 8989:8989   # Sonarr
       - 7878:7878   # Radarr
+      - 8686:8686   # Lidarr
     environment:
       - VPN_SERVICE_PROVIDER=${VPN_PROVIDER}
       - VPN_TYPE=${VPN_TYPE:-openvpn}
@@ -811,6 +828,43 @@ services:
       - ${ROOT_DIR}/config/jellyfin:/config
       - ${ROOT_DIR}/media/tv:/data/tvshows
       - ${ROOT_DIR}/media/movies:/data/movies
+      - ${ROOT_DIR}/media/music:/data/music
+    restart: always
+
+  # --- SABnzbd (Optional - enable with: docker compose --profile sabnzbd up -d) ---
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    profiles:
+      - sabnzbd
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    ports:
+      - 8085:8080   # SABnzbd Web UI
+    volumes:
+      - ${ROOT_DIR}/config/sabnzbd:/config
+      - ${ROOT_DIR}/media/downloads:/data/downloads
+    restart: always
+
+  # --- Lidarr (Optional - enable with: docker compose --profile lidarr up -d) ---
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    profiles:
+      - lidarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - ${ROOT_DIR}/config/lidarr:/config
+      - ${ROOT_DIR}/media:/data/media
+      - ${ROOT_DIR}/media/downloads:/data/downloads
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
     restart: always
 
   # --- Notifications (Optional - enable with: docker compose --profile notifications up -d) ---
@@ -1097,6 +1151,16 @@ them automatically."
     Write-Host "    - API Key: " -ForegroundColor Gray -NoNewline
     Write-Host "(paste the Radarr API key you copied)" -ForegroundColor Cyan
     Write-Host "    - Click 'Test' then 'Save'" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "  If you enabled Lidarr, add it too:" -ForegroundColor Gray
+    Write-Host "    - Click '+' and select 'Lidarr'" -ForegroundColor Gray
+    Write-Host "    - Prowlarr Server: " -ForegroundColor Gray -NoNewline
+    Write-Host "http://localhost:9696" -ForegroundColor Cyan
+    Write-Host "    - Lidarr Server: " -ForegroundColor Gray -NoNewline
+    Write-Host "http://localhost:8686" -ForegroundColor Cyan
+    Write-Host "    - API Key: " -ForegroundColor Gray -NoNewline
+    Write-Host "(from Lidarr > Settings > General)" -ForegroundColor Cyan
+    Write-Host "    - Click 'Test' then 'Save'" -ForegroundColor Gray
 
     Press-Enter
 
@@ -1135,6 +1199,12 @@ browser. It's completely free and open-source."
     Write-Host "       - Click '+' next to Folders" -ForegroundColor Gray
     Write-Host "       - Enter: " -ForegroundColor Gray -NoNewline
     Write-Host "/data/tvshows" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "     For Music (if you enabled Lidarr):" -ForegroundColor Yellow
+    Write-Host "       - Content type: Music" -ForegroundColor Gray
+    Write-Host "       - Click '+' next to Folders" -ForegroundColor Gray
+    Write-Host "       - Enter: " -ForegroundColor Gray -NoNewline
+    Write-Host "/data/music" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  4. Finish the setup wizard" -ForegroundColor White
     Write-Host ""
@@ -1237,6 +1307,17 @@ browser. It's completely free and open-source."
     Write-Host "    Radarr:       http://localhost:7878" -ForegroundColor White
     Write-Host "    Jellyfin:     http://localhost:8096" -ForegroundColor Cyan -NoNewline
     Write-Host " (Media Server)" -ForegroundColor Gray
+    # Show optional services if they were enabled
+    $sabnzbdRunning = docker ps --format '{{.Names}}' 2>$null | Select-String '^sabnzbd$'
+    if ($sabnzbdRunning) {
+        Write-Host "    SABnzbd:      http://localhost:8085" -ForegroundColor White -NoNewline
+        Write-Host " (Usenet Downloads)" -ForegroundColor Gray
+    }
+    $lidarrRunning = docker ps --format '{{.Names}}' 2>$null | Select-String '^lidarr$'
+    if ($lidarrRunning) {
+        Write-Host "    Lidarr:       http://localhost:8686" -ForegroundColor White -NoNewline
+        Write-Host " (Music Manager)" -ForegroundColor Gray
+    }
     Write-Host ""
     Write-Host "  Your media folder:" -ForegroundColor Yellow
     Write-Host "    $env:USERPROFILE\Desktop\PrivacyServer\media\" -ForegroundColor Gray
@@ -1448,6 +1529,161 @@ function Setup-FlareSolverr {
     Press-Enter
 }
 
+# --- Bonus: SABnzbd Setup ---
+function Setup-SABnzbd {
+    param([string]$Path)
+
+    Write-Banner
+    Write-Host "  BONUS: Usenet Downloads with SABnzbd" -ForegroundColor Magenta
+    Write-Host "  -------------------------------------" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  SABnzbd is a Usenet download client — an alternative to torrents." -ForegroundColor White
+    Write-Host "  Usenet downloads are SSL-encrypted and typically faster." -ForegroundColor White
+    Write-Host "  You'll need a Usenet provider subscription (e.g., Newshosting, Eweka)." -ForegroundColor White
+    Write-Host ""
+
+    if (-not (Ask-YesNo "Would you like to enable Usenet downloads (SABnzbd)?")) {
+        Write-Host ""
+        Write-Info "Skipping SABnzbd setup. You can enable it later!"
+        Write-Host ""
+        Write-Host "  To enable later, run:" -ForegroundColor Gray
+        Write-Host "    docker compose --profile sabnzbd up -d" -ForegroundColor Cyan
+        return
+    }
+
+    Write-Host ""
+    Write-Step "1" "Starting SABnzbd container..."
+    Push-Location $Path
+    docker compose --profile sabnzbd up -d 2>&1 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+    Pop-Location
+
+    Write-Host ""
+    Write-Success "SABnzbd is running!"
+
+    Press-Enter
+
+    Write-Banner
+    Write-Host "  Configure SABnzbd" -ForegroundColor Magenta
+    Write-Host "  -----------------" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Press ENTER to open SABnzbd in your browser..." -ForegroundColor Yellow
+    Read-Host | Out-Null
+    Start-Process "http://localhost:8085"
+    Write-Host ""
+    Write-Host "  1. Follow the SABnzbd Quick-Start Wizard" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  2. Add your Usenet provider:" -ForegroundColor Yellow
+    Write-Host "     - Host: " -ForegroundColor White -NoNewline
+    Write-Host "(from your Usenet provider, e.g., news.newshosting.com)" -ForegroundColor Cyan
+    Write-Host "     - Port: " -ForegroundColor White -NoNewline
+    Write-Host "563" -ForegroundColor Cyan -NoNewline
+    Write-Host " (SSL)" -ForegroundColor Gray
+    Write-Host "     - Username & Password: " -ForegroundColor White -NoNewline
+    Write-Host "(your Usenet account credentials)" -ForegroundColor Cyan
+    Write-Host "     - SSL: " -ForegroundColor White -NoNewline
+    Write-Host "Yes" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  3. Use SABnzbd as a download client in Sonarr/Radarr/Lidarr:" -ForegroundColor Yellow
+    Write-Host "     - Go to: Settings > Download Clients" -ForegroundColor White
+    Write-Host "     - Click '+' and select 'SABnzbd'" -ForegroundColor White
+    Write-Host "     - Host: " -ForegroundColor White -NoNewline
+    Write-Host "sabnzbd" -ForegroundColor Cyan
+    Write-Host "     - Port: " -ForegroundColor White -NoNewline
+    Write-Host "8080" -ForegroundColor Cyan
+    Write-Host "     - API Key: " -ForegroundColor White -NoNewline
+    Write-Host "(from SABnzbd > Config > General)" -ForegroundColor Cyan
+    Write-Host "     - Click 'Test' then 'Save'" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  SABnzbd is ready for Usenet downloads!" -ForegroundColor Green
+
+    Press-Enter
+}
+
+# --- Bonus: Lidarr Setup ---
+function Setup-Lidarr {
+    param([string]$Path)
+
+    Write-Banner
+    Write-Host "  BONUS: Music Management with Lidarr" -ForegroundColor Magenta
+    Write-Host "  ------------------------------------" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Lidarr automatically finds, downloads, and organizes music." -ForegroundColor White
+    Write-Host "  It works just like Sonarr/Radarr but for music albums and artists." -ForegroundColor White
+    Write-Host "  Your music will be available in Jellyfin for streaming!" -ForegroundColor White
+    Write-Host ""
+
+    if (-not (Ask-YesNo "Would you like to enable music management (Lidarr)?")) {
+        Write-Host ""
+        Write-Info "Skipping Lidarr setup. You can enable it later!"
+        Write-Host ""
+        Write-Host "  To enable later, run:" -ForegroundColor Gray
+        Write-Host "    docker compose --profile lidarr up -d" -ForegroundColor Cyan
+        return
+    }
+
+    Write-Host ""
+    Write-Step "1" "Starting Lidarr container..."
+    Push-Location $Path
+    docker compose --profile lidarr up -d 2>&1 | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+    Pop-Location
+
+    Write-Host ""
+    Write-Success "Lidarr is running!"
+
+    Press-Enter
+
+    Write-Banner
+    Write-Host "  Configure Lidarr" -ForegroundColor Magenta
+    Write-Host "  ----------------" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Press ENTER to open Lidarr in your browser..." -ForegroundColor Yellow
+    Read-Host | Out-Null
+    Start-Process "http://localhost:8686"
+    Write-Host ""
+    Write-Host "  1. Create your admin account when prompted" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  2. Add Root Folder (where music is saved):" -ForegroundColor Yellow
+    Write-Host "     - Go to: Settings > Media Management" -ForegroundColor White
+    Write-Host "     - Scroll down and click 'Add Root Folder'" -ForegroundColor White
+    Write-Host "     - Enter path: " -ForegroundColor White -NoNewline
+    Write-Host "/data/media/music" -ForegroundColor Cyan
+    Write-Host "     - Click 'OK'" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  3. Add Download Client:" -ForegroundColor Yellow
+    Write-Host "     - Go to: Settings > Download Clients" -ForegroundColor White
+    Write-Host "     - Click '+' and select 'qBittorrent'" -ForegroundColor White
+    Write-Host "     - Host: " -ForegroundColor White -NoNewline
+    Write-Host "localhost" -ForegroundColor Cyan
+    Write-Host "     - Port: " -ForegroundColor White -NoNewline
+    Write-Host "8080" -ForegroundColor Cyan
+    Write-Host "     - Username: " -ForegroundColor White -NoNewline
+    Write-Host "admin" -ForegroundColor Cyan
+    Write-Host "     - Password: " -ForegroundColor White -NoNewline
+    Write-Host "(your qBittorrent password)" -ForegroundColor Cyan
+    Write-Host "     - Click 'Test' then 'Save'" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  4. Copy your API Key (for Prowlarr):" -ForegroundColor Yellow
+    Write-Host "     - Go to: Settings > General" -ForegroundColor White
+    Write-Host "     - Copy the 'API Key'" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  5. Connect in Prowlarr:" -ForegroundColor Yellow
+    Write-Host "     - Open Prowlarr: " -ForegroundColor White -NoNewline
+    Write-Host "http://localhost:8181" -ForegroundColor Cyan
+    Write-Host "     - Go to: Settings > Apps" -ForegroundColor White
+    Write-Host "     - Click '+' and select 'Lidarr'" -ForegroundColor White
+    Write-Host "     - Prowlarr Server: " -ForegroundColor White -NoNewline
+    Write-Host "http://localhost:9696" -ForegroundColor Cyan
+    Write-Host "     - Lidarr Server: " -ForegroundColor White -NoNewline
+    Write-Host "http://localhost:8686" -ForegroundColor Cyan
+    Write-Host "     - API Key: " -ForegroundColor White -NoNewline
+    Write-Host "(paste the Lidarr API key)" -ForegroundColor Cyan
+    Write-Host "     - Click 'Test' then 'Save'" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Lidarr is ready! Add artists and let it find your music." -ForegroundColor Green
+
+    Press-Enter
+}
+
 # --- Main Execution ---
 function Main {
     Write-Banner
@@ -1530,6 +1766,7 @@ browsing stays on your regular connection."
     New-Item -ItemType Directory -Path $InstallPath -Force | Out-Null
     New-Item -ItemType Directory -Path "$InstallPath\config" -Force | Out-Null
     New-Item -ItemType Directory -Path "$InstallPath\media\downloads" -Force | Out-Null
+    New-Item -ItemType Directory -Path "$InstallPath\media\music" -Force | Out-Null
     Write-Success "Directories created"
 
     Write-Step "2" "Generating .env file..."
@@ -1550,6 +1787,8 @@ browsing stays on your regular connection."
         Show-SetupGuide
         Setup-Notifiarr -Path $InstallPath
         Setup-FlareSolverr -Path $InstallPath
+        Setup-SABnzbd -Path $InstallPath
+        Setup-Lidarr -Path $InstallPath
     } else {
         Write-Host ""
         Write-Error-Custom "Setup failed. Please check your VPN credentials."

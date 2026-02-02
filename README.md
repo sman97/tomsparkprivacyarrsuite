@@ -120,6 +120,8 @@ curl -fsSL https://raw.githubusercontent.com/loponai/tomsparkprivacyarrsuite/mai
 - **Jellyfin included** - Stream your media to any device out of the box
 - **Discord notifications** - Optional Notifiarr integration for download alerts
 - **FlareSolverr support** - Optional Cloudflare bypass for protected indexers
+- **Usenet support** - Optional SABnzbd for Usenet downloads
+- **Music management** - Optional Lidarr for automatic music organization
 - **Pre-configured ports** - Avoids common port conflicts
 - **Guided configuration** - Step-by-step instructions for connecting all apps
 - **Safe defaults** - Credentials properly quoted, secure settings enabled
@@ -133,6 +135,8 @@ curl -fsSL https://raw.githubusercontent.com/loponai/tomsparkprivacyarrsuite/mai
 | Sonarr | `localhost:8989` | TV show manager |
 | Radarr | `localhost:7878` | Movie manager |
 | Jellyfin | `localhost:8096` | Media server (watch on any device!) |
+| SABnzbd | `localhost:8085` | Usenet download client (optional) |
+| Lidarr | `localhost:8686` | Music manager (optional) |
 | Notifiarr | `localhost:5454` | Discord notifications (optional) |
 | FlareSolverr | `localhost:8191` | Cloudflare bypass proxy (optional) |
 | Gluetun | - | VPN tunnel (NordVPN/ProtonVPN/Surfshark + other providers) |
@@ -192,6 +196,12 @@ docker compose --profile notifications up -d
 
 # Enable FlareSolverr (Cloudflare bypass for indexers)
 docker compose --profile flaresolverr up -d
+
+# Enable SABnzbd (Usenet downloads)
+docker compose --profile sabnzbd up -d
+
+# Enable Lidarr (music management)
+docker compose --profile lidarr up -d
 ```
 
 ## Discord Notifications (Notifiarr)
@@ -257,6 +267,51 @@ Some indexers use Cloudflare anti-bot protection which blocks automated access. 
 
 Prowlarr will now automatically route requests through FlareSolverr when indexers require Cloudflare bypass. No API key or account needed.
 
+## Usenet Downloads (SABnzbd)
+
+[SABnzbd](https://sabnzbd.org/) is a Usenet download client — an alternative to torrents. Usenet downloads are SSL-encrypted and typically faster. You'll need a Usenet provider subscription (e.g., Newshosting, Eweka).
+
+**The setup script will ask if you want this at the end.** If you skipped it or want to add it later:
+
+### Enable SABnzbd
+
+1. **Start SABnzbd:**
+   ```bash
+   docker compose --profile sabnzbd up -d
+   ```
+
+2. **Open SABnzbd** at `http://localhost:8085` and follow the Quick-Start Wizard
+
+3. **Add your Usenet provider** (host, port, username, API key from your provider)
+
+4. **Use SABnzbd as a download client** in Sonarr/Radarr/Lidarr:
+   - Settings > Download Clients > + > SABnzbd
+   - Host: `sabnzbd`, Port: `8080`
+   - API Key: from SABnzbd > Config > General
+
+## Music Management (Lidarr)
+
+[Lidarr](https://lidarr.audio/) automatically finds, downloads, and organizes music — just like Sonarr for TV and Radarr for movies. Your music will be available in Jellyfin for streaming.
+
+**The setup script will ask if you want this at the end.** If you skipped it or want to add it later:
+
+### Enable Lidarr
+
+1. **Start Lidarr:**
+   ```bash
+   docker compose --profile lidarr up -d
+   ```
+
+2. **Open Lidarr** at `http://localhost:8686` and create your admin account
+
+3. **Set root folder** to `/data/media/music` (Settings > Media Management > Add Root Folder)
+
+4. **Add download client:** Settings > Download Clients > + > qBittorrent (Host: `localhost`, Port: `8080`)
+
+5. **Connect in Prowlarr:** Settings > Apps > + > Lidarr (Server: `http://localhost:8686`, add API key)
+
+6. **Add music library in Jellyfin:** Content type "Music", folder `/data/music`
+
 ## Troubleshooting
 
 ### AUTH_FAILED Error (OpenVPN)
@@ -300,25 +355,25 @@ Username is `admin`. Change the password after logging in.
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      INTERNET                           │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────┐
-│                 GLUETUN (VPN Tunnel)                    │
-│       NordVPN / ProtonVPN / Surfshark / Others           │
-│                   Your IP: Hidden                       │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │
-│  │ qBittorrent │ │   Sonarr    │ │   Radarr    │       │
-│  │   :8080     │ │   :8989     │ │   :7878     │       │
-│  └─────────────┘ └─────────────┘ └─────────────┘       │
-│         ┌─────────────┐                                 │
-│         │  Prowlarr   │                                 │
-│         │   :8181     │                                 │
-│         └─────────────┘                                 │
-└─────────────────────────────────────────────────────────┘
-
-All containers share Gluetun's network = Zero IP leaks
+└───────────┬─────────────────────────────┬───────────────┘
+            │                             │
+            ▼                             ▼
+┌───────────────────────────────────┐  ┌──────────────┐
+│       GLUETUN (VPN Tunnel)        │  │   SABnzbd*   │
+│  NordVPN / ProtonVPN / Surfshark  │  │    :8085     │
+│         Your IP: Hidden           │  │  (SSL/own    │
+├───────────────────────────────────┤  │   network)   │
+│ ┌───────────┐ ┌───────┐ ┌───────┐│  └──────────────┘
+│ │qBittorrent│ │ Sonarr│ │Radarr ││
+│ │  :8080    │ │ :8989 │ │ :7878 ││  ┌──────────────┐
+│ └───────────┘ └───────┘ └───────┘│  │   Jellyfin   │
+│ ┌───────────┐ ┌───────┐         ││  │    :8096     │
+│ │ Prowlarr  │ │Lidarr*│         ││  │  (Media      │
+│ │  :8181    │ │ :8686 │         ││  │   Server)    │
+│ └───────────┘ └───────┘         ││  └──────────────┘
+└───────────────────────────────────┘
+                                      * = optional
+All VPN containers share Gluetun's network = Zero IP leaks
 ```
 
 ## License
@@ -353,6 +408,8 @@ Questions? Join the **[Tom Spark Discord](https://discord.gg/uPdRcKxEVS)** for s
 - [LinuxServer.io](https://www.linuxserver.io/) - Docker images
 - [Notifiarr](https://notifiarr.com) - Discord notifications
 - [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) - Cloudflare bypass proxy
+- [SABnzbd](https://sabnzbd.org/) - Usenet download client
+- [Lidarr](https://lidarr.audio/) - Music manager
 - Tom Spark - Original tutorial
 
 ---
